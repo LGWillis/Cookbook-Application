@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyc
+*.pyd
+*.sqlite3
+
+# Environments
+.venv/
+.env
+backend/.env
+
+# Django
+/staticfiles/
+/media/
+
+# VSCode
+.vscode/
+
+# Node/Frontend (future)
+node_modules/
+*.log
+
+# Docker
+**/__pycache__/
+*.egg-info/
+.DS_Store
