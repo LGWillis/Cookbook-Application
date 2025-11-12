@@ -7,7 +7,7 @@ export function authHeaders() {
 
 export async function api(path, { method = 'GET', headers = {}, body } = {}) {
   const url = `${API_BASE}${path}`;
-  const opts = { method, headers: { ...headers }, credentials: 'include' };
+  const opts = { method, headers: { ...headers } };
   if (body && !(body instanceof FormData)) {
     opts.headers['Content-Type'] = 'application/json';
     opts.body = JSON.stringify(body);

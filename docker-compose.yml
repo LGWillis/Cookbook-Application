@@ -24,6 +24,7 @@ services:
       DB_HOST: db
       DB_PORT: 5432
       DJANGO_DEBUG: "true"
+      FRONTEND_ORIGIN: http://localhost:5173,http://localhost:3000
     volumes:
       - ./backend:/app
       - media_data:/app/media
@@ -31,6 +32,17 @@ services:
       - "8000:8000"
     depends_on:
       - db
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE: http://localhost:8000
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
 
 volumes:
   db_data:
