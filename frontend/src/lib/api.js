@@ -43,13 +43,19 @@ export const UsersAPI = {
 };
 
 export const RecipesAPI = {
-  async list(q) {
-    const qs = q ? `?q=${encodeURIComponent(q)}` : '';
-    return api(`/api/recipes/${qs}`, { headers: { ...authHeaders() } });
+  async list(q, page) {
+    const params = new URLSearchParams()
+    if (q) params.set('q', q)
+    if (page) params.set('page', String(page))
+    const qs = params.toString()
+    return api(`/api/recipes/${qs ? `?${qs}` : ''}`, { headers: { ...authHeaders() } });
   },
   async create(data) {
     const isMultipart = data instanceof FormData;
     return api('/api/recipes/', { method: 'POST', headers: { ...authHeaders() }, body: data });
+  },
+  async get(id) {
+    return api(`/api/recipes/${id}/`, { headers: { ...authHeaders() } });
   },
   async update(id, data) {
     return api(`/api/recipes/${id}/`, { method: 'PUT', headers: { ...authHeaders() }, body: data });

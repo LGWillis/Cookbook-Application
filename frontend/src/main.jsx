@@ -7,6 +7,7 @@ import Home from './pages/Home.jsx'
 import Login from './pages/Login.jsx'
 import Register from './pages/Register.jsx'
 import Recipes from './pages/Recipes.jsx'
+import RecipeDetail from './pages/RecipeDetail.jsx'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
@@ -17,6 +18,7 @@ createRoot(document.getElementById('root')).render(
           <Route path="login" element={<Login />} />
           <Route path="register" element={<Register />} />
           <Route path="recipes" element={<Recipes />} />
+          <Route path="recipes/:id" element={<RecipeDetail />} />
         </Route>
       </Routes>
     </BrowserRouter>
