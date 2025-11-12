@@ -93,6 +93,12 @@ DATABASES = {
     }
 }
 
+# Optional: Cloud SQL (Postgres) via Unix socket on Cloud Run
+_cloud_sql_conn = os.getenv('CLOUD_SQL_CONNECTION_NAME')
+if DATABASES['default']['ENGINE'] == 'django.db.backends.postgresql' and _cloud_sql_conn:
+    DATABASES['default']['HOST'] = f"/cloudsql/{_cloud_sql_conn}"
+    DATABASES['default']['PORT'] = ''
+
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
@@ -131,7 +137,7 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 # Media files
 MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
+MEDIA_ROOT = Path(os.getenv('DJANGO_MEDIA_ROOT', BASE_DIR / 'media'))
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
