@@ -1,0 +1,36 @@
+# Cloud Build: build and push backend image to Artifact Registry
+# Manual trigger recommended. This pipeline does NOT deploy (keeps secrets out of repo).
+# Substitutions to set in the trigger UI:
+#   _REGION: us-central1
+#   _REPO: cookbook-repo
+#   _IMAGE: backend
+#   _TAG: prod
+
+options:
+  logging: CLOUD_LOGGING_ONLY
+
+substitutions:
+  _REGION: us-central1
+  _REPO: cookbook-repo
+  _IMAGE: backend
+  _TAG: prod
+
+steps:
+  - name: gcr.io/cloud-builders/docker
+    id: build-backend
+    args:
+      [
+        "build",
+        "-t",
+        "${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/${_IMAGE}:${_TAG}",
+        "-f",
+        "backend/Dockerfile",
+        ".",
+      ]
+
+  - name: gcr.io/cloud-builders/docker
+    id: push-backend
+    args: ["push", "${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/${_IMAGE}:${_TAG}"]
+
+images:
+  - "${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/${_IMAGE}:${_TAG}"

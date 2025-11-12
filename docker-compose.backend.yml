@@ -1,0 +1,38 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: cookbook
+      POSTGRES_USER: cookbook
+      POSTGRES_PASSWORD: cookbook
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    env_file:
+      - backend/.env
+    environment:
+      DB_ENGINE: django.db.backends.postgresql
+      DB_NAME: ${POSTGRES_DB:-cookbook}
+      DB_USER: ${POSTGRES_USER:-cookbook}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-cookbook}
+      DB_HOST: db
+      DB_PORT: 5432
+      DJANGO_DEBUG: "false"
+      FRONTEND_ORIGIN: http://localhost:5173,http://localhost:3000
+    volumes:
+      - ./backend:/app
+      - media_data:/app/media
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+
+volumes:
+  db_data:
+  media_data:

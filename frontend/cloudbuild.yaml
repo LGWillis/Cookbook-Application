@@ -1,0 +1,40 @@
+# Cloud Build: build and push frontend image to Artifact Registry with baked API base
+# Manual trigger recommended. This pipeline does NOT deploy.
+# Substitutions to set in the trigger UI:
+#   _REGION: us-central1
+#   _REPO: cookbook-repo
+#   _IMAGE: frontend
+#   _TAG: prod
+#   _API_BASE: https://YOUR_BACKEND_CLOUD_RUN_URL
+
+options:
+  logging: CLOUD_LOGGING_ONLY
+
+substitutions:
+  _REGION: us-central1
+  _REPO: cookbook-repo
+  _IMAGE: frontend
+  _TAG: prod
+  _API_BASE: https://example.com
+
+steps:
+  - name: gcr.io/cloud-builders/docker
+    id: build-frontend
+    args:
+      [
+        "build",
+        "-t",
+        "${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/${_IMAGE}:${_TAG}",
+        "--build-arg",
+        "VITE_API_BASE=${_API_BASE}",
+        "-f",
+        "frontend/Dockerfile",
+        "frontend",
+      ]
+
+  - name: gcr.io/cloud-builders/docker
+    id: push-frontend
+    args: ["push", "${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/${_IMAGE}:${_TAG}"]
+
+images:
+  - "${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/${_IMAGE}:${_TAG}"
