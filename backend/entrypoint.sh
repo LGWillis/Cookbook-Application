@@ -12,6 +12,7 @@ if [ -n "$host" ] && [ -n "$port" ]; then
   echo "Database is up"
 fi
 
+python manage.py makemigrations --noinput
 python manage.py migrate --noinput
 python manage.py collectstatic --noinput || true
 
