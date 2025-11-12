@@ -12,7 +12,9 @@ if [ -n "$host" ] && [ -n "$port" ]; then
   echo "Database is up"
 fi
 
-python manage.py makemigrations --noinput
+if [ "$DJANGO_RUN_MAKEMIGRATIONS" = "true" ]; then
+  python manage.py makemigrations --noinput || true
+fi
 python manage.py migrate --noinput
 python manage.py collectstatic --noinput || true
 
