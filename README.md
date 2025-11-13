@@ -1,6 +1,6 @@
-# RecipeShare
+# CookBook
 
-RecipeShare is a recipe discovery app that suggests personalized meal ideas based on your dietary preferences and available ingredients.
+CookBook is a recipe discovery app that suggests personalized meal ideas based on your dietary preferences and available ingredients.
 
 ## Technology Stack
 - **Frontend**: React (Vite), Tailwind CSS, Nginx (container serving build)
@@ -19,4 +19,4 @@ RecipeShare is a recipe discovery app that suggests personalized meal ideas base
 
 ## Preview
 
-![RecipeShare preview](docs/Screenshot%202025-11-12%20212839.png)
+![CookBook preview](docs/Screenshot%202025-11-12%20212839.png)
