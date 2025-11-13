@@ -19,4 +19,4 @@ RecipeShare is a recipe discovery app that suggests personalized meal ideas base
 
 ## Preview
 
-![RecipeShare preview](docs/screenshot.png)
+![RecipeShare preview](docs/Screenshot%202025-11-12%20212839.png)
