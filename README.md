@@ -18,6 +18,5 @@ RecipeShare is a recipe discovery app that suggests personalized meal ideas base
 4. Start the app: `npm run dev`
 
 ## Preview
-Place your screenshot at `docs/screenshot.png` (or update the path below), then it will render on GitHub:
 
 ![RecipeShare preview](docs/screenshot.png)
