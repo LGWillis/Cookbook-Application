@@ -61,8 +61,12 @@ jobs:
       env:
         DJANGO_SETTINGS_MODULE: config.settings
         DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_db
+        PYTHONPATH: ${{ github.workspace }}/backend
       run: |
-        python -m pytest -v --cov=.
+        # Create test database
+        python -c "import psycopg2; conn = psycopg2.connect(host='localhost', user='postgres', password='postgres'); conn.autocommit = True; conn.cursor().execute('CREATE DATABASE test_db;')"
+        # Run tests with coverage
+        python -m pytest -v --cov=. --cov-report=xml
 
     - name: Install frontend dependencies
       working-directory: frontend
