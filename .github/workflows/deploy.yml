@@ -228,4 +228,4 @@ jobs:
           --max-instances 3 \
           --concurrency 80 \
           --ingress all \
-          --update-env-vars "PORT=8080,BACKEND_URL=${BACKEND_URL}"
+          --update-env-vars "BACKEND_URL=${BACKEND_URL}"
