@@ -16,20 +16,20 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /app
 
-# Pre-copy requirements to leverage Docker cache
-COPY backend/requirements-docker.txt /app/requirements.txt
+# Copy requirements
+COPY requirements-docker.txt /app/requirements.txt
 
 RUN pip install --upgrade pip && \
     pip install --no-cache-dir -r /app/requirements.txt
 
-# Project files
-COPY backend /app
+# Copy project files
+COPY . /app
 
 # Collect static (noop now), ensure media dir
 RUN mkdir -p /app/media /app/staticfiles
 
-# Entrypoint to run migrations and server
-COPY backend/entrypoint.sh /entrypoint.sh
+# Copy entrypoint
+COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
 EXPOSE 8000
