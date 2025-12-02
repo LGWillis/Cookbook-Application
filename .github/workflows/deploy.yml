@@ -133,7 +133,9 @@ jobs:
           --update-env-vars="\
             DJANGO_SETTINGS_MODULE=config.settings,\
             DJANGO_DEBUG=False,\
+            DJANGO_ENVIRONMENT=cloud-run,\
             PYTHONUNBUFFERED=True,\
+            FRONTEND_ORIGIN=${{ secrets.FRONTEND_ORIGIN }},\
             DATABASE_URL=${{ secrets.DATABASE_URL }}\
           " \
           --labels="commit_sha=${{ github.sha }},deployment_time=$(date +%s)"
