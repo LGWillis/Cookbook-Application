@@ -23,9 +23,19 @@ COPY nginx.conf /etc/nginx/conf.d/default.conf.template
 COPY --from=build /app/dist /usr/share/nginx/html
 
 # Create a startup script that will generate the nginx config with the current environment
-RUN echo '#!/bin/sh \n\
-# Substitute environment variables in the nginx config\n  envsubst "`printf "$%s" $(bash -c "compgen -A variable")`" < /etc/nginx/conf.d/default.conf.template > /etc/nginx/conf.d/default.conf \n\
-# Start nginx\n  exec nginx -g "daemon off;"' > /docker-entrypoint.sh \
+RUN echo '#!/bin/sh
+set -e
+
+# Substitute environment variables in the nginx config
+if [ -n "$BACKEND_URL" ]; then
+  export BACKEND_URL
+  envsubst "\$PORT" < /etc/nginx/conf.d/default.conf.template > /etc/nginx/conf.d/default.conf
+else
+  envsubst "\$PORT" < /etc/nginx/conf.d/default.conf.template > /etc/nginx/conf.d/default.conf
+fi
+
+# Start nginx
+exec nginx -g "daemon off;"' > /docker-entrypoint.sh \
   && chmod +x /docker-entrypoint.sh
 
 # Use the PORT environment variable provided by Cloud Run
