@@ -63,8 +63,19 @@ jobs:
         DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_db
         PYTHONPATH: ${{ github.workspace }}/backend
       run: |
-        # Create test database
-        python -c "import psycopg2; conn = psycopg2.connect(host='localhost', user='postgres', password='postgres'); conn.autocommit = True; conn.cursor().execute('CREATE DATABASE test_db;')"
+        # Ensure test database exists
+        python -c """
+        import psycopg2
+        from psycopg2 import sql
+        conn = psycopg2.connect(host='localhost', user='postgres', password='postgres')
+        conn.autocommit = True
+        try:
+            conn.cursor().execute('CREATE DATABASE test_db;')
+            print('Created test database')
+        except psycopg2.errors.DuplicateDatabase:
+            print('Test database already exists')
+        conn.close()
+        """
         # Run tests with coverage
         python -m pytest -v --cov=. --cov-report=xml
 
