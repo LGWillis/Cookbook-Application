@@ -134,7 +134,6 @@ jobs:
             DJANGO_SETTINGS_MODULE=config.settings,\
             DJANGO_DEBUG=False,\
             PYTHONUNBUFFERED=True,\
-            PORT=8000,\
             DATABASE_URL=${{ secrets.DATABASE_URL }}\
           " \
           --labels="commit_sha=${{ github.sha }},deployment_time=$(date +%s)"
