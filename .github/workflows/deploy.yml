@@ -144,6 +144,12 @@ jobs:
         EXPOSE 80
         CMD ["nginx", "-g", "daemon off;"]' > Dockerfile
 
+    - name: Build Frontend
+      working-directory: frontend
+      run: |
+        npm install
+        npm run build
+
     - name: Build and Push Frontend Image
       working-directory: frontend
       run: |
