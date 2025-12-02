@@ -222,7 +222,6 @@ jobs:
           --allow-unauthenticated \
           --port 8080 \
           --timeout 300s \
-          --set-env-vars="PORT=8080,BACKEND_URL=${BACKEND_URL}" \
           --cpu 1 \
           --memory 1Gi \
           --min-instances 0 \
