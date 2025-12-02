@@ -1,4 +1,4 @@
-#!/usr/bin/env sh
+#!/bin/sh
 set -e
 
 # Debug: Print environment variables
