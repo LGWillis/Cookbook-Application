@@ -82,22 +82,20 @@ WSGI_APPLICATION = 'config.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
+import dj_database_url
+
+# Default SQLite database for local development
 DATABASES = {
-    'default': {
-        'ENGINE': os.getenv('DB_ENGINE', 'django.db.backends.sqlite3'),
-        'NAME': os.getenv('DB_NAME', str(BASE_DIR / 'db.sqlite3')),
-        'USER': os.getenv('DB_USER', ''),
-        'PASSWORD': os.getenv('DB_PASSWORD', ''),
-        'HOST': os.getenv('DB_HOST', ''),
-        'PORT': os.getenv('DB_PORT', ''),
-    }
+    'default': dj_database_url.config(
+        default='sqlite:///' + str(BASE_DIR / 'db.sqlite3'),
+        conn_max_age=600,
+        conn_health_checks=True,
+    )
 }
 
-# Optional: Cloud SQL (Postgres) via Unix socket on Cloud Run
-_cloud_sql_conn = os.getenv('CLOUD_SQL_CONNECTION_NAME')
-if DATABASES['default']['ENGINE'] == 'django.db.backends.postgresql' and _cloud_sql_conn:
-    DATABASES['default']['HOST'] = f"/cloudsql/{_cloud_sql_conn}"
-    DATABASES['default']['PORT'] = ''
+# For Cloud Run, we'll use the DATABASE_URL environment variable
+# The dj_database_url package will automatically parse it and configure the database
+# Example DATABASE_URL: postgres://user:password@host:port/dbname
 
 
 # Password validation
