@@ -106,13 +106,27 @@ jobs:
 
     - name: Deploy Backend to Cloud Run
       run: |
+        echo "Deploying backend to Cloud Run..."
         gcloud run deploy cookbook-backend \
           --image gcr.io/${{ secrets.GCP_PROJECT_ID }}/cookbook-backend \
           --platform managed \
           --region ${{ secrets.GCP_REGION }} \
           --allow-unauthenticated \
           --port 8000 \
-          --set-env-vars="DATABASE_URL=${{ secrets.DATABASE_URL }}"
+          --set-env-vars="\
+            DJANGO_SETTINGS_MODULE=config.settings,\
+            DJANGO_DEBUG=False,\
+            PYTHONUNBUFFERED=True,\
+            DB_ENGINE=django.db.backends.postgresql,\
+            DB_NAME=${{ secrets.DB_NAME }},\
+            DB_USER=${{ secrets.DB_USER }},\
+            DB_PASSWORD=${{ secrets.DB_PASSWORD }},\
+            DB_HOST=${{ secrets.DB_HOST }},\
+            DB_PORT=5432,\
+            DATABASE_URL=${{ secrets.DATABASE_URL }}\
+          "
+        
+        echo "Backend deployment initiated. Check Cloud Run logs for details."
 
     - name: Get Backend URL
       id: get-backend-url

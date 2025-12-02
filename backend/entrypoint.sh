@@ -1,21 +1,35 @@
 #!/usr/bin/env sh
 set -e
 
-host="$DB_HOST"
-port="$DB_PORT"
+# Debug: Print environment variables
+echo "=== Environment Variables ==="
+printenv | sort
+echo "==========================="
 
-if [ -n "$host" ] && [ -n "$port" ]; then
-  echo "Waiting for database $host:$port..."
-  until nc -z "$host" "$port"; do
-    sleep 1
+# Wait for database if DB_HOST is set
+if [ -n "$DB_HOST" ] && [ -n "$DB_PORT" ]; then
+  echo "Waiting for database $DB_HOST:$DB_PORT..."
+  until nc -z "$DB_HOST" "$DB_PORT"; do
+    echo "Waiting for database..."
+    sleep 2
   done
-  echo "Database is up"
+  echo "Database is up!"
 fi
 
-if [ "$DJANGO_RUN_MAKEMIGRATIONS" = "true" ]; then
-  python manage.py makemigrations --noinput || true
-fi
-python manage.py migrate --noinput
-python manage.py collectstatic --noinput || true
+# Run database migrations
+echo "Running database migrations..."
+python manage.py migrate --noinput || { echo "Failed to run migrations"; exit 1; }
 
-gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 2 --timeout 120 || python manage.py runserver 0.0.0.0:8000
+# Collect static files
+echo "Collecting static files..."
+python manage.py collectstatic --noinput || echo "Warning: Failed to collect static files"
+
+# Start Gunicorn with better error handling
+echo "Starting Gunicorn..."
+exec gunicorn config.wsgi:application \
+  --bind 0.0.0.0:8000 \
+  --workers 2 \
+  --timeout 120 \
+  --log-level=info \
+  --access-logfile - \
+  --error-logfile -
