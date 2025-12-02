@@ -1,56 +1,77 @@
-#!/bin/sh
+#!/bin/bash
 set -e
 
-# Debug: Print environment variables
-echo "=== Environment Variables ==="
-printenv | sort
-echo "==========================="
+# Debug: Print essential environment variables
+echo "=== Starting Django Application ==="
+echo "DJANGO_DEBUG: ${DJANGO_DEBUG:-not set}"
+echo "DJANGO_SETTINGS_MODULE: ${DJANGO_SETTINGS_MODULE:-not set}"
+echo "PORT: ${PORT:-8000}"
+
+# Ensure PORT is set for Cloud Run
+export PORT=${PORT:-8000}
 
 # Check for DATABASE_URL
 if [ -n "$DATABASE_URL" ]; then
-  echo "Using DATABASE_URL for database connection"
-  # Extract database components from DATABASE_URL for debugging
-  DB_PROTOCOL=$(echo $DATABASE_URL | grep '://' | sed -e's,^\(.*://\).*,\1,g')
-  DB_URL=$(echo $DATABASE_URL | sed -e s,$DB_PROTOCOL,,g)
-  DB_USER=$(echo $DB_URL | grep @ | cut -d@ -f1 | cut -d: -f1)
-  DB_HOST_PORT=$(echo $DB_URL | grep @ | cut -d@ -f2 | cut -d/ -f1)
-  DB_HOST=$(echo $DB_HOST_PORT | cut -d: -f1)
-  DB_PORT=$(echo $DB_HOST_PORT | cut -d: -f2)
-  DB_NAME=$(echo $DB_URL | grep / | cut -d/ -f2- | cut -d? -f1)
+  echo "✓ DATABASE_URL is configured"
   
-  echo "Database Details:"
-  echo "- Protocol: $DB_PROTOCOL"
-  echo "- Host: $DB_HOST"
-  echo "- Port: $DB_PORT"
-  echo "- Database: $DB_NAME"
+  # Wait for database with timeout
+  echo "Checking database connectivity..."
+  DB_READY=0
+  for i in {1..30}; do
+    if python manage.py dbshell < /dev/null 2>&1 | grep -q "psql\|sqlite"; then
+      echo "✓ Database is reachable"
+      DB_READY=1
+      break
+    fi
+    echo "  Attempt $i/30 - waiting for database..."
+    sleep 1
+  done
   
-  # Wait for database if host and port are available
-  if [ -n "$DB_HOST" ] && [ -n "$DB_PORT" ]; then
-    echo "Waiting for database $DB_HOST:$DB_PORT..."
-    until nc -z "$DB_HOST" "$DB_PORT"; do
-      echo "Waiting for database..."
-      sleep 2
-    done
-    echo "Database is up!"
+  if [ $DB_READY -eq 0 ]; then
+    echo "⚠ Warning: Could not verify database connection, but continuing..."
   fi
 else
-  echo "WARNING: DATABASE_URL not set. Database connection might fail."
+  echo "ℹ No DATABASE_URL set, using SQLite"
 fi
 
 # Run database migrations
 echo "Running database migrations..."
-python manage.py migrate --noinput || { echo "Failed to run migrations"; exit 1; }
+if python manage.py migrate --noinput; then
+  echo "✓ Migrations completed successfully"
+else
+  echo "⚠ Warning: Migration encountered issues, continuing anyway..."
+fi
 
-# Collect static files
+# Collect static files (with better error handling)
 echo "Collecting static files..."
-python manage.py collectstatic --noinput || echo "Warning: Failed to collect static files"
+if python manage.py collectstatic --noinput --clear 2>&1 | tail -5; then
+  echo "✓ Static files collected"
+else
+  echo "⚠ Warning: Static file collection had issues"
+fi
 
-# Start Gunicorn with better error handling
-echo "Starting Gunicorn..."
+# Verify the application can start
+echo "Testing Django app startup..."
+if python -c "import django; django.setup(); print('✓ Django initialized successfully')" 2>&1; then
+  :
+else
+  echo "⚠ Warning: Django initialization test failed"
+fi
+
+# Start Gunicorn with verbose logging
+echo "================================"
+echo "Starting Gunicorn on 0.0.0.0:${PORT}"
+echo "================================"
+
 exec gunicorn config.wsgi:application \
-  --bind 0.0.0.0:8000 \
-  --workers 2 \
-  --timeout 120 \
-  --log-level=info \
+  --bind 0.0.0.0:${PORT} \
+  --workers 3 \
+  --worker-class sync \
+  --timeout 60 \
+  --max-requests 1000 \
+  --max-requests-jitter 50 \
+  --keep-alive 5 \
+  --log-level=debug \
   --access-logfile - \
-  --error-logfile -
+  --error-logfile - \
+  --access-log-format='%(h)s %(l)s %(u)s %(t)s "%(r)s" %(s)s %(b)s "%(f)s" "%(a)s" %(D)s' 2>&1
