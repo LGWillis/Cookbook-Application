@@ -159,10 +159,23 @@ jobs:
         echo "\n=== dist/ directory contents ==="
         ls -la dist/
         
+        # Create a cloudbuild.yaml file with build arguments
+        cat > cloudbuild.yaml << 'EOL'
+        steps:
+        - name: 'gcr.io/cloud-builders/docker'
+          args: [
+            'build',
+            '--build-arg', 'VITE_API_BASE=$_VITE_API_BASE',
+            '-t', 'gcr.io/$PROJECT_ID/cookbook-frontend',
+            '.'
+          ]
+        images: ['gcr.io/$PROJECT_ID/cookbook-frontend']
+        EOL
+        
         # Build and push the Docker image with build args
         gcloud builds submit \
-          --tag gcr.io/${{ secrets.GCP_PROJECT_ID }}/cookbook-frontend \
-          --build-arg VITE_API_BASE=${{ env.VITE_API_BASE_URL }} \
+          --config=cloudbuild.yaml \
+          --substitutions=_VITE_API_BASE=${{ env.VITE_API_BASE_URL }} \
           .
 
     - name: Deploy Frontend to Cloud Run
