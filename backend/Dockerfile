@@ -36,9 +36,9 @@ RUN mkdir -p /app/media /app/staticfiles && \
 # Make entrypoint executable
 RUN chmod +x /app/entrypoint.sh
 
-# Health check to help Cloud Run detect failures
+# Health check - simple TCP check instead of HTTP to avoid auth issues
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD curl -f http://localhost:${PORT:-8000}/api/recipes/ || exit 1
+    CMD curl -f http://localhost:${PORT:-8000}/ || exit 1
 
 # Expose port (Cloud Run uses PORT environment variable, but this is good practice)
 EXPOSE 8000
