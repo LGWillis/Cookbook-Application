@@ -16,22 +16,22 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /app
 
-# Pre-copy requirements to leverage Docker cache
-COPY backend/requirements-docker.txt /app/requirements.txt
+# Copy requirements first to leverage Docker cache
+COPY requirements-docker.txt /app/requirements.txt
 
 RUN pip install --upgrade pip && \
     pip install --no-cache-dir -r /app/requirements.txt
 
-# Project files
-COPY backend /app
+# Copy the rest of the application
+COPY . /app/
 
-# Collect static (noop now), ensure media dir
+# Create necessary directories
 RUN mkdir -p /app/media /app/staticfiles
 
-# Entrypoint to run migrations and server
-COPY backend/entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
+# Make entrypoint executable
+RUN chmod +x /app/entrypoint.sh
 
 EXPOSE 8000
 
-CMD ["/entrypoint.sh"]
+# Use the entrypoint script
+ENTRYPOINT ["/app/entrypoint.sh"]
