@@ -113,7 +113,7 @@ jobs:
           --region ${{ secrets.GCP_REGION }} \
           --allow-unauthenticated \
           --port 8000 \
-          --set-env-vars="\
+          --update-env-vars="\
             DJANGO_SETTINGS_MODULE=config.settings,\
             DJANGO_DEBUG=False,\
             PYTHONUNBUFFERED=True,\
