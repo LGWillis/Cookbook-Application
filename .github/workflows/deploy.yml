@@ -1,3 +1,7 @@
+<<<<<<< HEAD
+=======
+# .github/workflows/deploy.yml
+>>>>>>> d7e6374010ca7e3fe50e5a36519e3a22f5f94314
 name: Cookbook CI/CD
 
 on:
@@ -88,6 +92,7 @@ jobs:
         project_id: ${{ secrets.GCP_PROJECT_ID }}
         export_default_credentials: true
 
+<<<<<<< HEAD
     - name: Authenticate to Google Cloud
       run: |
         echo "${{ secrets.GCP_SA_KEY }}" > service-account.json
@@ -100,6 +105,10 @@ jobs:
     - name: Configure Docker
       run: |
         gcloud auth configure-docker gcr.io --quiet
+=======
+    - name: Configure Docker
+      run: gcloud auth configure-docker
+>>>>>>> d7e6374010ca7e3fe50e5a36519e3a22f5f94314
 
     - name: Build and Push Backend Image
       working-directory: backend
@@ -156,4 +165,8 @@ jobs:
           --region ${{ secrets.GCP_REGION }} \
           --allow-unauthenticated \
           --port 80 \
+<<<<<<< HEAD
           --set-env-vars="BACKEND_URL=${{ env.BACKEND_URL }}"
+=======
+          --set-env-vars="BACKEND_URL=${{ env.BACKEND_URL }}"
+>>>>>>> d7e6374010ca7e3fe50e5a36519e3a22f5f94314
