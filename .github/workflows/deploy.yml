@@ -89,16 +89,12 @@ jobs:
         project_id: ${{ secrets.GCP_PROJECT_ID }}
         export_default_credentials: true
 
-    - name: Configure Docker and Authenticate
+    - name: Configure Docker
       run: |
-        # Write the service account key with proper JSON escaping
-        echo '${{ toJSON(secrets.GCP_SA_KEY) }}' > service-account.json
-        # Activate the service account
-        gcloud auth activate-service-account --key-file=service-account.json
-        gcloud config set project ${{ secrets.GCP_PROJECT_ID }}
+        # Configure Docker to use gcloud as a credential helper
         gcloud auth configure-docker --quiet
-        # Clean up the service account file
-        rm -f service-account.json
+        # Set the project
+        gcloud config set project ${{ secrets.GCP_PROJECT_ID }}
 
     - name: Build and Push Backend Image
       working-directory: backend
