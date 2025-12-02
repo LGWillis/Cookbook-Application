@@ -120,23 +120,34 @@ jobs:
 
     - name: Deploy Backend to Cloud Run
       run: |
-        echo "Deploying backend to Cloud Run..."
+        echo "Deploying backend to Cloud Run with detailed logging..."
         
-        # Deploy with minimal environment variables
+        # Deploy with increased timeout and detailed logging
         gcloud run deploy cookbook-backend \
           --image gcr.io/${{ secrets.GCP_PROJECT_ID }}/cookbook-backend \
           --platform managed \
           --region ${{ secrets.GCP_REGION }} \
           --allow-unauthenticated \
           --port 8000 \
+          --timeout 300s \
           --update-env-vars="\
             DJANGO_SETTINGS_MODULE=config.settings,\
             DJANGO_DEBUG=False,\
             PYTHONUNBUFFERED=True,\
+            PORT=8000,\
             DATABASE_URL=${{ secrets.DATABASE_URL }}\
-          "
+          " \
+          --labels="commit_sha=${{ github.sha }},deployment_time=$(date +%s)"
         
         echo "Backend deployment completed. Check Cloud Run logs for details."
+    
+    - name: Check Backend Logs
+      run: |
+        echo "Fetching logs for the most recent revision..."
+        gcloud logging read "resource.type=cloud_run_revision AND resource.labels.service_name=cookbook-backend" \
+          --limit 50 \
+          --format "value(textPayload)" \
+          --project ${{ secrets.GCP_PROJECT_ID }} || echo "Failed to fetch logs”
 
     - name: Get Backend URL
       id: get-backend-url
