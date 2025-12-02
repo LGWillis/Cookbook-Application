@@ -144,15 +144,11 @@ jobs:
         EXPOSE 80
         CMD ["nginx", "-g", "daemon off;"]' > Dockerfile
 
-    - name: Build Frontend
-      working-directory: frontend
-      run: |
-        npm install
-        npm run build
-
     - name: Build and Push Frontend Image
       working-directory: frontend
       run: |
+        # Create .dockerignore to include the dist directory
+        echo -e "node_modules\n.git\n.gitignore" > .dockerignore
         gcloud builds submit --tag gcr.io/${{ secrets.GCP_PROJECT_ID }}/cookbook-frontend
 
     - name: Deploy Frontend to Cloud Run
