@@ -40,7 +40,6 @@ jobs:
       with:
         node-version: '18'
         cache: 'npm'
-        cache-dependency-path: 'frontend/package-lock.json'
 
     - name: Set up PostgreSQL
       run: |
@@ -89,18 +88,8 @@ jobs:
         project_id: ${{ secrets.GCP_PROJECT_ID }}
         export_default_credentials: true
 
-    - name: Configure Docker and Authenticate
-      run: |
-        # Write service account key to a file
-        echo '${{ secrets.GCP_SA_KEY }}' > service-account.json
-        # Authenticate with the service account
-        gcloud auth activate-service-account --key-file=service-account.json
-        # Configure Docker
-        gcloud auth configure-docker --quiet
-        # Set the project
-        gcloud config set project ${{ secrets.GCP_PROJECT_ID }}
-        # Clean up the service account file
-        rm -f service-account.json
+    - name: Configure Docker
+      run: gcloud auth configure-docker
 
     - name: Build and Push Backend Image
       working-directory: backend
@@ -130,53 +119,18 @@ jobs:
     - name: Build Frontend
       working-directory: frontend
       env:
-        VITE_API_BASE_URL: /api
+        VITE_API_BASE: /api
       run: |
-        # Install dependencies and build the frontend
         npm ci
         npm run build
-        
-        # Verify the dist directory was created
-        ls -la dist/
-        
-        # Show the Dockerfile contents for debugging
-        echo "=== Dockerfile contents ==="
-        cat Dockerfile
-        
-        # Show the nginx.conf contents for debugging
-        echo "=== nginx.conf contents ==="
-        cat nginx.conf
 
     - name: Build and Push Frontend Image
       working-directory: frontend
       run: |
-        # Create .dockerignore if it doesn't exist
-        echo -e "node_modules\n.git\n.gitignore\n.vscode\n.dockerignore" > .dockerignore
-        
-        # Verify files are in place
-        echo "=== Current directory contents ==="
-        ls -la
-        echo "\n=== dist/ directory contents ==="
-        ls -la dist/
-        
-        # Create a cloudbuild.yaml file with build arguments
-        cat > cloudbuild.yaml << 'EOL'
-        steps:
-        - name: 'gcr.io/cloud-builders/docker'
-          args: [
-            'build',
-            '--build-arg', 'VITE_API_BASE=$_VITE_API_BASE',
-            '-t', 'gcr.io/$PROJECT_ID/cookbook-frontend',
-            '.'
-          ]
-        images: ['gcr.io/$PROJECT_ID/cookbook-frontend']
-        EOL
-        
-        # Build and push the Docker image with build args
+        # Build and push the Docker image
         gcloud builds submit \
-          --config=cloudbuild.yaml \
-          --substitutions=_VITE_API_BASE=${{ env.VITE_API_BASE_URL }} \
-          .
+          --tag gcr.io/${{ secrets.GCP_PROJECT_ID }}/cookbook-frontend \
+          --substitutions _BACKEND_URL=${{ env.BACKEND_URL }}
 
     - name: Deploy Frontend to Cloud Run
       run: |
@@ -208,10 +162,4 @@ jobs:
           --allow-unauthenticated \
           --port 8080 \
           --timeout 300s \
-          --cpu 1 \
-          --memory 1Gi \
-          --min-instances 0 \
-          --max-instances 3 \
-          --concurrency 80 \
-          --ingress all \
-          --update-env-vars "BACKEND_URL=${BACKEND_URL}"
+          --set-env-vars "BACKEND_URL=${BACKEND_URL}"
