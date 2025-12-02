@@ -139,58 +139,31 @@ jobs:
         # Verify the dist directory was created
         ls -la dist/
         
-        # Create a simple Dockerfile for the frontend
-        cat > Dockerfile << 'EOF'
-        # Build stage
-        FROM node:18-alpine as builder
-        WORKDIR /app
-        COPY package*.json ./
-        RUN npm ci
-        COPY . .
-        RUN npm run build
-
-        # Production stage
-        FROM nginx:alpine
-        # Set the PORT environment variable (Cloud Run will inject this)
-        ENV PORT=8080
+        # Show the Dockerfile contents for debugging
+        echo "=== Dockerfile contents ==="
+        cat Dockerfile
         
-        # Copy nginx config
-        COPY nginx.conf /etc/nginx/conf.d/default.conf.template
-        
-        # Copy built files from builder
-        COPY --from=builder /app/dist /usr/share/nginx/html
-        
-        # Create a startup script to handle environment variables
-        RUN echo '#!/bin/sh' > /docker-entrypoint.sh && \
-            echo 'set -e' >> /docker-entrypoint.sh && \
-            echo 'envsubst "\$PORT" < /etc/nginx/conf.d/default.conf.template > /etc/nginx/conf.d/default.conf' >> /docker-entrypoint.sh && \
-            echo 'exec nginx -g "daemon off;"' >> /docker-entrypoint.sh && \
-            chmod +x /docker-entrypoint.sh
-        
-        # Health check
-        HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
-          CMD wget --no-verbose --tries=1 --spider http://localhost:${PORT}/ || exit 1
-        
-        EXPOSE $PORT
-        CMD ["/docker-entrypoint.sh"]
-        EOF
+        # Show the nginx.conf contents for debugging
+        echo "=== nginx.conf contents ==="
+        cat nginx.conf
 
     - name: Build and Push Frontend Image
       working-directory: frontend
       run: |
         # Create .dockerignore if it doesn't exist
-        echo -e "node_modules\n.git\n.gitignore\n.vscode\nDockerfile\n.dockerignore" > .dockerignore
+        echo -e "node_modules\n.git\n.gitignore\n.vscode\n.dockerignore" > .dockerignore
         
         # Verify files are in place
         echo "=== Current directory contents ==="
         ls -la
         echo "\n=== dist/ directory contents ==="
         ls -la dist/
-        echo "\n=== Dockerfile content ==="
-        cat Dockerfile
         
-        # Build and push the Docker image
-        gcloud builds submit --tag gcr.io/${{ secrets.GCP_PROJECT_ID }}/cookbook-frontend .
+        # Build and push the Docker image with build args
+        gcloud builds submit \
+          --tag gcr.io/${{ secrets.GCP_PROJECT_ID }}/cookbook-frontend \
+          --build-arg VITE_API_BASE=${{ env.VITE_API_BASE_URL }} \
+          .
 
     - name: Deploy Frontend to Cloud Run
       run: |

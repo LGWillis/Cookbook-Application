@@ -12,7 +12,27 @@ RUN npm run build
 
 # Serve stage
 FROM nginx:alpine
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+# Install gettext for envsubst
+RUN apk add --no-cache gettext
+
+# Copy nginx config template
+COPY nginx.conf /etc/nginx/conf.d/default.conf.template
+
+# Copy built files
 COPY --from=build /app/dist /usr/share/nginx/html
-EXPOSE 80
-CMD ["nginx", "-g", "daemon off;"]
+
+# Create a startup script that will generate the nginx config with the current environment
+RUN echo '#!/bin/sh \n\
+# Substitute environment variables in the nginx config\n  envsubst "`printf "$%s" $(bash -c "compgen -A variable")`" < /etc/nginx/conf.d/default.conf.template > /etc/nginx/conf.d/default.conf \n\
+# Start nginx\n  exec nginx -g "daemon off;"' > /docker-entrypoint.sh \
+  && chmod +x /docker-entrypoint.sh
+
+# Use the PORT environment variable provided by Cloud Run
+ENV PORT=8080
+
+# Expose the port Cloud Run will use
+EXPOSE $PORT
+
+# Use our custom entrypoint script
+CMD ["/docker-entrypoint.sh"]
