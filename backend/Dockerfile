@@ -20,21 +20,25 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 WORKDIR /app
 
 # Copy requirements first to leverage Docker cache layers
-COPY requirements-docker.txt /app/requirements.txt
+# The requirements file lives under the `backend/` folder in the repo
+COPY backend/requirements-docker.txt /app/requirements.txt
 
 # Install Python dependencies
 RUN pip install --upgrade pip setuptools wheel && \
     pip install -r /app/requirements.txt
 
-# Copy application code
-COPY . /app/
+# Copy application code (only the backend folder) so files land at /app/
+# This ensures `/app/entrypoint.sh` exists (it lives at `backend/entrypoint.sh`).
 
 # Create necessary directories with proper permissions
 RUN mkdir -p /app/media /app/staticfiles && \
     chmod -R 755 /app/media /app/staticfiles
 
-# Make entrypoint executable
-RUN chmod +x /app/entrypoint.sh
+# Copy backend files into /app
+COPY backend/ /app/
+
+# Use a short inline entrypoint to avoid file line-ending/BOM issues from host OS
+ENTRYPOINT ["/bin/bash", "-c", "set -e; echo '=== Starting Django Application ==='; echo \"DJANGO_DEBUG: ${DJANGO_DEBUG:-not set}\"; echo \"PORT: ${PORT:-8000}\"; export PORT=${PORT:-8000}; python manage.py migrate --noinput || true; python manage.py collectstatic --noinput --clear || true; exec gunicorn config.wsgi:application --bind 0.0.0.0:${PORT} --workers 3 --worker-class sync --timeout 60 --max-requests 1000 --max-requests-jitter 50 --keep-alive 5 --log-level=debug --access-logfile - --error-logfile -"]
 
 # Health check - simple TCP check instead of HTTP to avoid auth issues
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
@@ -46,5 +50,4 @@ EXPOSE 8000
 # Default to 8000 if PORT not set
 ENV PORT=8000
 
-# Use the entrypoint script
-ENTRYPOINT ["/app/entrypoint.sh"]
+# (entrypoint is the inline shell command above)

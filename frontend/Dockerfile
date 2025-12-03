@@ -5,7 +5,12 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci
 COPY . .
-ENV VITE_API_BASE=/api
+
+# Accept a build argument so the API base can be set from docker-compose
+ARG VITE_API_BASE=/api
+# Export as env so the build step (and Vite) pick it up
+ENV VITE_API_BASE=${VITE_API_BASE}
+
 RUN npm run build
 
 # Serve stage
@@ -15,26 +20,11 @@ FROM nginx:alpine
 RUN apk add --no-cache gettext
 
 # Copy nginx config template
-COPY nginx.conf /etc/nginx/nginx.conf.template
+COPY ./nginx.conf /etc/nginx/nginx.conf.template
 
-# Create a simple startup script
-RUN echo '#!/bin/sh\
-set -e\
-\
-# Set default values\
-: "${PORT:=8080}"\
-: "${BACKEND_URL:=http://localhost:8000}"\
-\
-# Log environment variables\
-echo "Starting with PORT=$PORT"\
-echo "Using BACKEND_URL=$BACKEND_URL"\
-\
-# Replace environment variables in nginx config\
-envsubst < /etc/nginx/nginx.conf.template > /etc/nginx/nginx.conf\
-\
-# Start nginx\
-exec nginx -g "daemon off;"' > /docker-entrypoint.sh && \
-    chmod +x /docker-entrypoint.sh
+# Copy entrypoint script and convert CRLF to LF, then make executable
+COPY ./docker-entrypoint.sh /tmp/entrypoint.sh
+RUN tr -d '\r' < /tmp/entrypoint.sh > /docker-entrypoint.sh && chmod +x /docker-entrypoint.sh && rm /tmp/entrypoint.sh
 
 # Copy built files
 COPY --from=build /app/dist /usr/share/nginx/html
@@ -43,11 +33,10 @@ COPY --from=build /app/dist /usr/share/nginx/html
 RUN echo "OK" > /usr/share/nginx/html/healthz
 
 # Set environment variables
-ENV PORT=8080
 ENV BACKEND_URL=http://localhost:8000
 
-# Expose port
-EXPOSE 8080
+# Nginx listens on port 80 in the provided config
+EXPOSE 80
 
 # Use the entrypoint script
 ENTRYPOINT ["/bin/sh", "/docker-entrypoint.sh"]
